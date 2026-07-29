@@ -9,45 +9,53 @@ The generation part also has to be a pip package called mazegen, with the .whl a
 Stuff that gets graded: flake8 and mypy passing, type hints, docstrings, no crashes ever
 (print a clear error instead), Makefile, and a proper README at the end.
 
+## Project structure (agreed)
+
+```
+a_maze_ing.py         # parse_config(), display_ascii_maze(), run_interactive_menu(), main()
+config.txt            # default config, KEY=VALUE
+Makefile              # install, run, debug, clean, lint
+.gitignore
+README.md
+pyproject.toml        # build config for the mazegen package
+mazegen/
+    __init__.py       # exposes MazeGenerator
+    generator.py      # the MazeGenerator class
+```
+
 ## Who does what
 
-### achafai (engine)
-1. mazegen/generator.py, the MazeGenerator class: grid, DFS carving, seed, the 42 pattern
-2. BFS solver, returns the shortest path as a string like "NESW..."
-3. hex export (bit0=N, bit1=E, bit2=S, bit3=W, 1 means wall closed)
-4. build the pip package and put the .whl at the repo root
+### achafai (engine, everything in mazegen/)
+MazeGenerator class:
+- `__init__(width, height, entry, exit, perfect, seed)`
+- `generate_maze()` — grid of wall bitmasks, DFS carving, the 42 pattern (fully closed cells)
+- `get_structure()` — returns the grid, list[list[int]], bitmask per cell
+- `get_solution()` — BFS shortest path as a string like "NESW..."
+- `export_to_hex_file(path)` — writes the output file (hex digits, then entry, exit, path)
+  (bit0=N, bit1=E, bit2=S, bit3=W, 1 means wall closed)
 
-### maslan (everything the user sees)
-1. amazeing/config.py: parse KEY=VALUE, skip # lines, check the 6 mandatory keys
-   (WIDTH, HEIGHT, ENTRY, EXIT, OUTPUT_FILE, PERFECT), nice error messages
-2. amazeing/renderer.py: ascii maze with colors, walls, entry, exit, path
-3. amazeing/ui.py: the menu (1 regen, 2 path, 3 colors, 4 quit)
-4. output file writer, default config.txt, Makefile
+Plus: build the pip package and put the .whl at the repo root.
+
+### maslan (everything in a_maze_ing.py)
+- `parse_config()` — KEY=VALUE, skip # lines, check the 6 mandatory keys
+  (WIDTH, HEIGHT, ENTRY, EXIT, OUTPUT_FILE, PERFECT), nice error messages
+- `display_ascii_maze()` — ascii render with colors, walls, entry, exit, path
+  (the 42 cells are the ones with bitmask 15, can color them differently)
+- `run_interactive_menu()` — 1 regen, 2 path, 3 colors, 4 quit
+- `main()` — glue it all together
+- default config.txt, Makefile
 
 ### both
-a_maze_ing.py (the glue), README, tests, and we review each other's PRs.
-
-## The interface (so we can work in parallel without waiting on each other)
-
-To be confirmed by achafai, rename whatever you want but then we lock it:
-
-```python
-gen = MazeGenerator(width, height, entry, exit_, perfect=True, seed=42)
-gen.generate()        # builds the maze
-gen.grid              # list[list[int]], wall bitmask per cell
-gen.solve()           # "SSEENE..." shortest path
-gen.to_hex_lines()    # lines for the output file
-gen.pattern_cells     # the 42 cells, for coloring
-```
+README, tests, and we review each other's PRs.
 
 ## Rough plan
 
-Day 1: interface agreed, maze generates, config parser done
-Day 2: whole pipeline runs end to end (solver + output file + basic render)
+Day 1: maze generates, config parser done
+Day 2: whole pipeline runs end to end (generate + output file + basic render)
 Day 3: menu and colors done, package built, tests for edge cases
 Day 4: README, lint clean, test a fresh clone with make install && make run
 
 ## Git
 
-Everyone works on their own branch (achafai/generator, maslan/config-parser),
+Everyone works on their own branch (achafai/generator, maslan/main-app),
 push, open a PR, the other one reviews and merges. No pushing straight to main.
