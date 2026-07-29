@@ -5,5 +5,4 @@ __pycache__/
 venv/
 dist/
 *.egg-info/
-ROADMAP.md
 amazeingsubject.pdf
