@@ -1,56 +1,53 @@
-# A-maze-ing — Game Plan
+# A-maze-ing roadmap
 
-**What we ship:** `python3 a_maze_ing.py config.txt` → generates a random maze
-(seed-reproducible, with a "42" drawn in closed cells) → saves it as hex digits
-→ shows it in the terminal with a menu (new maze / show-hide path / colors / quit).
-Generation logic also ships as a pip package `mazegen-*` at repo root.
+The goal: `python3 a_maze_ing.py config.txt` reads the config, generates a random maze
+(reproducible with a seed, and it has to contain a "42" made of closed cells), writes it
+to a file as hex digits and shows it in the terminal with a small menu
+(new maze / show or hide the path / colors / quit).
+The generation part also has to be a pip package called mazegen, with the .whl at the repo root.
 
-**Quality bar (graded):** flake8 + mypy clean, type hints, docstrings, never
-crashes (clear error messages), Makefile, complete README.
+Stuff that gets graded: flake8 and mypy passing, type hints, docstrings, no crashes ever
+(print a clear error instead), Makefile, and a proper README at the end.
 
----
+## Who does what
 
-## Missions
+### achafai (engine)
+1. mazegen/generator.py, the MazeGenerator class: grid, DFS carving, seed, the 42 pattern
+2. BFS solver, returns the shortest path as a string like "NESW..."
+3. hex export (bit0=N, bit1=E, bit2=S, bit3=W, 1 means wall closed)
+4. build the pip package and put the .whl at the repo root
 
-### 🧠 achafai — The Maze Brain
-1. `mazegen/generator.py` — `MazeGenerator` class: grid, DFS carving, seed, "42" pattern
-2. BFS solver → shortest path as `"NESW..."` string
-3. Hex export (bit0=N, bit1=E, bit2=S, bit3=W · 1 = wall closed)
-4. Build the pip package, commit the `.whl` at repo root
+### maslan (everything the user sees)
+1. amazeing/config.py: parse KEY=VALUE, skip # lines, check the 6 mandatory keys
+   (WIDTH, HEIGHT, ENTRY, EXIT, OUTPUT_FILE, PERFECT), nice error messages
+2. amazeing/renderer.py: ascii maze with colors, walls, entry, exit, path
+3. amazeing/ui.py: the menu (1 regen, 2 path, 3 colors, 4 quit)
+4. output file writer, default config.txt, Makefile
 
-### 🎨 maslan — The Maze Face
-1. `amazeing/config.py` — parse `KEY=VALUE`, skip `#` lines, validate the 6 mandatory keys (WIDTH, HEIGHT, ENTRY, EXIT, OUTPUT_FILE, PERFECT), friendly errors
-2. `amazeing/renderer.py` — ASCII maze with colors (walls, entry, exit, path)
-3. `amazeing/ui.py` — menu: 1 regen · 2 show/hide path · 3 colors · 4 quit
-4. Output file writer + default `config.txt` + Makefile
+### both
+a_maze_ing.py (the glue), README, tests, and we review each other's PRs.
 
-### 🤝 Together
-- `a_maze_ing.py` (glue) · README · tests · review each other's PRs
+## The interface (so we can work in parallel without waiting on each other)
 
----
-
-## The Contract (agree once, then full parallel — nobody waits)
+To be confirmed by achafai, rename whatever you want but then we lock it:
 
 ```python
 gen = MazeGenerator(width, height, entry, exit_, perfect=True, seed=42)
 gen.generate()        # builds the maze
-gen.grid              # list[list[int]] — wall bitmask per cell
+gen.grid              # list[list[int]], wall bitmask per cell
 gen.solve()           # "SSEENE..." shortest path
 gen.to_hex_lines()    # lines for the output file
-gen.pattern_cells     # cells of the "42" (for coloring)
+gen.pattern_cells     # the 42 cells, for coloring
 ```
 
----
+## Rough plan
 
-## Timeline
+Day 1: interface agreed, maze generates, config parser done
+Day 2: whole pipeline runs end to end (solver + output file + basic render)
+Day 3: menu and colors done, package built, tests for edge cases
+Day 4: README, lint clean, test a fresh clone with make install && make run
 
-| Day | Target |
-|---|---|
-| 1 | Contract agreed. achafai: maze generates. maslan: config parser done. |
-| 2 | **Full pipeline runs end-to-end.** Solver + output file + basic render. |
-| 3 | Menu + colors polished. Package built. Edge-case tests. |
-| 4 | README done. Lint clean. Fresh-clone test: `make install && make run`. |
+## Git
 
-## Git flow
-
-Own branch each (`achafai/generator`, `maslan/config-parser`) → push → PR → other person reviews → merge to `main`.
+Everyone works on their own branch (achafai/generator, maslan/config-parser),
+push, open a PR, the other one reviews and merges. No pushing straight to main.
