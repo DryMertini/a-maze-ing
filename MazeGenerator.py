@@ -51,12 +51,22 @@ class MazeGenerator():
             visited: set[tuple[int, int]]
             ) -> list[tuple[int, int, str]]:
         neighbors = list()
-        if x > 0:
+        if (x > 0) and (x-1, y) not in visited:
             neighbors.append((x-1, y, 'W'))
-        if x < self._width - 1:
+        if (x < self._width - 1) and (x+1, y) not in visited:
             neighbors.append((x+1, y, 'E'))
-        if y > 0:
+        if (y > 0) and (x, y-1) not in visited:
             neighbors.append((x, y-1, 'N'))
-        if y < self._height - 1:
+        if (y < self._height - 1) and (x, y+1) not in visited:
             neighbors.append((x, y+1, 'S'))
         return neighbors
+
+    def _break_wall(
+            self,
+            current_x: int,
+            current_y: int,
+            next_x: int,
+            next_y: int,
+            direction: str
+            ) -> None:
+        pass
