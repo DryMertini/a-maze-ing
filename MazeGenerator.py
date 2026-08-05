@@ -11,8 +11,8 @@ class MazeGenerator():
             perfect: bool = True,
             seed: int | None = 42
             ) -> None:
-        self._width = width
-        self._height = height
+        self._x_axis = width
+        self._y_axis = height
         self._entry = entry
         self._exit = exit
         self._perfect = perfect
@@ -23,20 +23,20 @@ class MazeGenerator():
         self._path: list = []
 
     def _initialize_grid(self) -> list[list[int]]:
-        return [[15 for _ in range(self._height)]
-                for _ in range(self._width)]
+        return [[15 for _ in range(self._x_axis)]
+                for _ in range(self._y_axis)]
 
     def _place_42_pattern(self) -> set[tuple[int, int]]:
-        if self._width < 2 or self._height < 2:
+        if self._x_axis < 9 or self._y_axis < 7:
             print("Error: Maze is too small to fit the '42' pattern.")
             return set()
         local_42_pattern = [
-            (0, 0), (1, 0), (2, 0), (2, 1), (2, 2), (3, 2), (4, 2),
-            (0, 4), (0, 5), (0, 6), (1, 6), (2, 6), (2, 5), (2, 4),
-            (3, 4), (4, 4), (4, 5), (4, 6)
+            (0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (2, 3), (2, 4),
+            (4, 0), (5, 0), (6, 0), (6, 1), (6, 2), (5, 2), (4, 2),
+            (4, 3), (4, 4), (5, 4), (6, 4)
         ]
-        offset_x = (self._height - 5) // 2
-        offset_y = (self._width - 7) // 2
+        offset_x = (self._x_axis - 7) // 2
+        offset_y = (self._y_axis - 5) // 2
         global_42_cordinates: set[tuple[int, int]] = set()
         for x_local, y_local in local_42_pattern:
             global_x = x_local + offset_x
@@ -53,11 +53,11 @@ class MazeGenerator():
         neighbors = list()
         if (x > 0) and (x-1, y) not in visited:
             neighbors.append((x-1, y, 'W'))
-        if (x < self._width - 1) and (x+1, y) not in visited:
+        if (x < self._x_axis - 1) and (x+1, y) not in visited:
             neighbors.append((x+1, y, 'E'))
         if (y > 0) and (x, y-1) not in visited:
             neighbors.append((x, y-1, 'N'))
-        if (y < self._height - 1) and (x, y+1) not in visited:
+        if (y < self._y_axis - 1) and (x, y+1) not in visited:
             neighbors.append((x, y+1, 'S'))
         return neighbors
 
@@ -90,3 +90,15 @@ class MazeGenerator():
         stack = []
         visited.add(self._entry)
         stack.append(self._entry)
+        while stack:
+            current_x, current_y = stack.pop()
+            neighbors = self._get_unvisited_neighbors(current_x, current_y,
+                                                      visited)
+            if neighbors:
+                next_x, next_y, direction = random.choice(neighbors)
+                self._break_wall(current_x, current_y, next_x, next_y,
+                                 direction)
+                visited.add((next_x, next_y))
+                stack.append((next_x, next_y))
+            else:
+                stack.pop()
