@@ -2,6 +2,7 @@
 
 import sys
 from dataclasses import dataclass
+from typing import Any
 
 MANDATORY_KEYS = ("WIDTH", "HEIGHT", "ENTRY", "EXIT", "OUTPUT_FILE", "PERFECT")
 
@@ -106,6 +107,135 @@ def parse_config(path: str) -> Config:
     )
 
 
+RESET = "\033[0m"
+WALL_COLORS = ("\033[97m", "\033[93m", "\033[92m", "\033[96m", "\033[95m")
+ENTRY_COLOR = "\033[95m"
+EXIT_COLOR = "\033[91m"
+PATH_COLOR = "\033[94m"
+PATTERN_COLOR = "\033[90m"
+MOVES = {"N": (0, -1), "E": (1, 0), "S": (0, 1), "W": (-1, 0)}
+
+
+def _path_cells(entry: tuple[int, int], path: str) -> set[tuple[int, int]]:
+    """Walk a NESW path string from the entry, return the visited cells."""
+    x, y = entry
+    cells = {(x, y)}
+    for step in path:
+        if step not in MOVES:
+            continue
+        dx, dy = MOVES[step]
+        x, y = x + dx, y + dy
+        cells.add((x, y))
+    return cells
+
+
+def _cell_interior(
+    cell: tuple[int, int],
+    walls: int,
+    entry: tuple[int, int],
+    exit_: tuple[int, int],
+    path: set[tuple[int, int]],
+) -> str:
+    """Return the coloured 2-char interior of one cell."""
+    if cell == entry:
+        return f"{ENTRY_COLOR}██{RESET}"
+    if cell == exit_:
+        return f"{EXIT_COLOR}██{RESET}"
+    if cell in path:
+        return f"{PATH_COLOR}▓▓{RESET}"
+    if walls == 15:
+        return f"{PATTERN_COLOR}░░{RESET}"
+    return "  "
+
+
+def display_ascii_maze(
+    grid: list[list[int]],
+    entry: tuple[int, int],
+    exit_: tuple[int, int],
+    path: str = "",
+    color_index: int = 0,
+) -> None:
+    """Print the maze with walls, entry, exit and an optional path."""
+    if not grid or not grid[0]:
+        return
+    wall = WALL_COLORS[color_index % len(WALL_COLORS)]
+
+    def seg(closed: bool, chars: str) -> str:
+        """One wall segment: coloured when closed, blank when open."""
+        return f"{wall}{chars}{RESET}" if closed else " " * len(chars)
+
+    corner = f"{wall}█{RESET}"
+    shown = _path_cells(entry, path) if path else set()
+    height, width = len(grid), len(grid[0])
+    for y in range(height):
+        top = "".join(
+            corner + seg(bool(grid[y][x] & 1), "██") for x in range(width)
+        )
+        print(top + corner)
+        mid = "".join(
+            seg(bool(grid[y][x] & 8), "█")
+            + _cell_interior((x, y), grid[y][x], entry, exit_, shown)
+            for x in range(width)
+        )
+        print(mid + seg(bool(grid[y][width - 1] & 2), "█"))
+    bottom = "".join(
+        corner + seg(bool(grid[height - 1][x] & 4), "██")
+        for x in range(width)
+    )
+    print(bottom + corner)
+
+
+def _build_generator(config: Config, seed: int | None) -> Any:
+    """Create a MazeGenerator from the config (imported lazily)."""
+    try:
+        from mazegen import MazeGenerator
+    except ImportError:
+        raise ConfigError(
+            "the mazegen package is not installed or not built yet"
+        ) from None
+    return MazeGenerator(
+        config.width, config.height, config.entry, config.exit,
+        config.perfect, seed,
+    )
+
+
+def run_interactive_menu(config: Config) -> None:
+    """Generate the maze, display it and handle user interactions."""
+    generator = _build_generator(config, config.seed)
+    generator.generate_maze()
+    generator.export_to_hex_file(config.output_file)
+    show_path = False
+    color = 0
+    while True:
+        path = generator.get_solution() if show_path else ""
+        display_ascii_maze(
+            generator.get_structure(), config.entry, config.exit,
+            path, color,
+        )
+        print("=== A-Maze-ing ===")
+        print("1. Re-generate a new maze")
+        print("2. Show/Hide path from entry to exit")
+        print("3. Rotate maze colors")
+        print("4. Quit")
+        try:
+            choice = input("Choice? (1-4): ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return
+        if choice == "1":
+            generator = _build_generator(config, None)
+            generator.generate_maze()
+            generator.export_to_hex_file(config.output_file)
+        elif choice == "2":
+            show_path = not show_path
+        elif choice == "3":
+            color += 1
+        elif choice == "4":
+            return
+        else:
+            print("Please enter a number between 1 and 4.")
+
+
 def main() -> int:
     """Program entry point."""
     if len(sys.argv) != 2:
@@ -113,10 +243,13 @@ def main() -> int:
         return 1
     try:
         config = parse_config(sys.argv[1])
+        run_interactive_menu(config)
     except ConfigError as exc:
         print(f"Error: {exc}")
         return 1
-    print(f"Config loaded: {config}")
+    except Exception as exc:  # last-resort net: never crash on the user
+        print(f"Error: unexpected problem: {exc}")
+        return 1
     return 0
 
 
