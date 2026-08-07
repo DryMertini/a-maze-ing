@@ -23,31 +23,17 @@ class MazeGenerator:
         self._path: list = []
 
     def _initialize_grid(self) -> list[list[int]]:
-        return [[15 for _ in range(self._x_axis)] for _ in range(self._y_axis)]
+        return [[15 for _ in range(self._x_axis)]
+                for _ in range(self._y_axis)]
 
     def _place_42_pattern(self) -> set[tuple[int, int]]:
         if self._x_axis < 9 or self._y_axis < 7:
             print("Error: Maze is too small to fit the '42' pattern.")
             return set()
         local_42_pattern = [
-            (0, 0),
-            (0, 1),
-            (0, 2),
-            (1, 2),
-            (2, 2),
-            (2, 3),
-            (2, 4),
-            (4, 0),
-            (5, 0),
-            (6, 0),
-            (6, 1),
-            (6, 2),
-            (5, 2),
-            (4, 2),
-            (4, 3),
-            (4, 4),
-            (5, 4),
-            (6, 4),
+            (0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (2, 3), (2, 4),
+            (4, 0), (5, 0), (6, 0), (6, 1), (6, 2), (5, 2), (4, 2),
+            (4, 3), (4, 4), (5, 4), (6, 4),
         ]
         offset_x = (self._x_axis - 7) // 2
         offset_y = (self._y_axis - 5) // 2
@@ -80,25 +66,26 @@ class MazeGenerator:
         # S:sn W: we N: ns E: ew
         match direction:
             case "s" | "S":
-                self._maze[current_x][current_y] &= 11
-                self._maze[next_x][next_y] &= 14
+                self._maze[current_y][current_x] &= 11
+                self._maze[next_y][next_x] &= 14
             case "w" | "W":
-                self._maze[current_x][current_y] &= 7
-                self._maze[next_x][next_y] &= 13
+                self._maze[current_y][current_x] &= 7
+                self._maze[next_y][next_x] &= 13
             case "n" | "N":
-                self._maze[current_x][current_y] &= 14
-                self._maze[next_x][next_y] &= 11
+                self._maze[current_y][current_x] &= 14
+                self._maze[next_y][next_x] &= 11
             case "e" | "E":
-                self._maze[current_x][current_y] &= 13
-                self._maze[next_x][next_y] &= 7
+                self._maze[current_y][current_x] &= 13
+                self._maze[next_y][next_x] &= 7
 
     def generate_maze(self) -> None:
+        self._maze = self._initialize_grid()
         visited = self._place_42_pattern()
         stack = []
         visited.add(self._entry)
         stack.append(self._entry)
         while stack:
-            current_x, current_y = stack.pop()
+            current_x, current_y = stack[-1]
             neighbors = self._get_unvisited_neighbors(current_x, current_y,
                                                       visited)
             if neighbors:
