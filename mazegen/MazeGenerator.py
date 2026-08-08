@@ -9,6 +9,7 @@ class MazeGenerator:
 
     The maze is a grid of cells; each cell stores its walls as a 4-bit
     mask (bit0=North, bit1=East, bit2=South, bit3=West, 1 = closed).
+    WSEN
     """
 
     def __init__(
@@ -35,7 +36,6 @@ class MazeGenerator:
         self._pattern: set[tuple[int, int]] = set()
 
     def _initialize_grid(self) -> list[list[int]]:
-        """Return a width x height grid with every wall closed (15)."""
         return [[15 for _ in range(self._x_axis)] for _ in range(self._y_axis)]
 
     def _place_42_pattern(self) -> set[tuple[int, int]]:
@@ -79,7 +79,6 @@ class MazeGenerator:
     def _get_unvisited_neighbors(
         self, x: int, y: int, visited: set[tuple[int, int]]
     ) -> list[tuple[int, int, str]]:
-        """Return in-bounds neighbours of (x, y) not yet visited."""
         neighbors = list()
         if (x > 0) and (x - 1, y) not in visited:
             neighbors.append((x - 1, y, "W"))
@@ -92,10 +91,11 @@ class MazeGenerator:
         return neighbors
 
     def _break_wall(
-        self, current_x: int, current_y: int, next_x: int, next_y: int,
+        self,
+        current_x: int, current_y: int,
+        next_x: int, next_y: int,
         direction: str
     ) -> None:
-        """Open the wall between two neighbouring cells, on both sides."""
         # SWNE s:7_w:11_n:13_e:14
         # S:sn W: we N: ns E: ew
         match direction:
