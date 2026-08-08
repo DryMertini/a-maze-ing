@@ -65,15 +65,16 @@ class MazeGenerator:
         ]
         offset_x = (self._x_axis - 7) // 2
         offset_y = (self._y_axis - 5) // 2
-        global_42_cordinates: set[tuple[int, int]] = set()
+        global_42_cords: set[tuple[int, int]] = set()
         for x_local, y_local in local_42_pattern:
             global_x = x_local + offset_x
             global_y = y_local + offset_y
-            global_42_cordinates.add((global_x, global_y))
-        if self._entry in global_42_cordinates or self._exit in global_42_cordinates:
-            print("Error: entry or exit overlaps the '42' pattern, " "pattern omitted.")
+            global_42_cords.add((global_x, global_y))
+        if self._entry in global_42_cords or self._exit in global_42_cords:
+            print("Error: entry or exit overlaps '42' pattern", end=' ')
+            print("pattern omitted.")
             return set()
-        return global_42_cordinates
+        return global_42_cords
 
     def _get_unvisited_neighbors(
         self, x: int, y: int, visited: set[tuple[int, int]]
@@ -91,7 +92,8 @@ class MazeGenerator:
         return neighbors
 
     def _break_wall(
-        self, current_x: int, current_y: int, next_x: int, next_y: int, direction: str
+        self, current_x: int, current_y: int, next_x: int, next_y: int,
+        direction: str
     ) -> None:
         """Open the wall between two neighbouring cells, on both sides."""
         # SWNE s:7_w:11_n:13_e:14
@@ -121,10 +123,12 @@ class MazeGenerator:
         stack.append(self._entry)
         while stack:
             current_x, current_y = stack[-1]
-            neighbors = self._get_unvisited_neighbors(current_x, current_y, visited)
+            neighbors = self._get_unvisited_neighbors(current_x, current_y,
+                                                      visited)
             if neighbors:
                 next_x, next_y, direction = random.choice(neighbors)
-                self._break_wall(current_x, current_y, next_x, next_y, direction)
+                self._break_wall(current_x, current_y, next_x, next_y,
+                                 direction)
                 visited.add((next_x, next_y))
                 stack.append((next_x, next_y))
             else:
@@ -178,7 +182,9 @@ class MazeGenerator:
             else:
                 opened += 1
 
-    def _get_open_neighbors(self, x: int, y: int) -> list[tuple[int, int, str]]:
+    def _get_open_neighbors(
+            self, x: int, y: int
+            ) -> list[tuple[int, int, str]]:
         """
         Checks N, E, S, W from (x, y).
         Returns neighbors ONLY if the bitwise wall in that direction is open
@@ -217,7 +223,8 @@ class MazeGenerator:
         if limit <= 0:
             return False
         # 3. Explore open neighbors:
-        for next_x, next_y, direction in self._get_open_neighbors(curr_x, curr_y):
+        for next_x, next_y, direction in self._get_open_neighbors(curr_x,
+                                                                  curr_y):
             if (next_x, next_y) not in visited:
                 visited.add((next_x, next_y))
                 path.append(direction)
@@ -243,7 +250,8 @@ class MazeGenerator:
             visited: set[tuple[int, int]] = {self._entry}
             path: list[str] = []
             # Try to reach the exit within the current depth_limit
-            if self._dls(self._entry[0], self._entry[1], depth_limit, visited, path):
+            if self._dls(self._entry[0], self._entry[1], depth_limit, visited,
+                         path):
                 # We found the shortest path!
                 # Join the list into a string and store it.
                 solution_str = "".join(path)
@@ -263,7 +271,8 @@ class MazeGenerator:
 
     def export_to_hex_file(self, path: str) -> None:
         """Write the maze, entry, exit and solution to the output file."""
-        lines = ["".join(format(cell, "X") for cell in row) for row in self._maze]
+        lines = ["".join(format(cell, "X") for cell in row)
+                 for row in self._maze]
         with open(path, "w", encoding="utf-8") as file:
             file.write("\n".join(lines) + "\n")
             file.write("\n")
